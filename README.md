@@ -180,17 +180,11 @@ See the [LICENSE](./LICENSE) file for details.
 
 <div align="center">
     <h2>FOLLOW US</h2>
-    <a href="https://x.com/artexagency" title="Follow Artex Agency on X/Twitter">
-        <img src="./docs/media/social/x.svg" width="18" height="18" alt="X/Twitter">
-    </a>
+    <a href="https://x.com/artexagency" title="Follow Artex Agency on X/Twitter"><img src="./docs/media/social/x.svg" width="18" height="18" alt="X/Twitter"></a>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="https://github.com/artex-agency" title="Check out Artex Agency on GitHub">
-        <img src="./docs/media/social/github.svg" width="23" height="23" alt="GitHub">
-    </a>
+    <a href="https://github.com/artex-agency" title="Check out Artex Agency on GitHub"><img src="./docs/media/social/github.svg" width="23" height="23" alt="GitHub"></a>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="https://www.linkedin.com/company/artexagency" title="Connect with Artex Agency on LinkedIn">
-        <img src="./docs/media/social/linkedin.svg" width="23" height="23" alt="LinkedIn">
-    </a>
+    <a href="https://www.linkedin.com/company/artexagency" title="Connect with Artex Agency on LinkedIn"><img src="./docs/media/social/linkedin.svg" width="23" height="23" alt="LinkedIn"></a>
 </div>
 
 
