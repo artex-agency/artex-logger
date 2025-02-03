@@ -17,6 +17,7 @@ namespace Artex\Logger;
 
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
+use Stringable;
 
 /**
  * Logger Class
@@ -30,18 +31,39 @@ use Psr\Log\LoggerInterface;
 class Logger extends AbstractLogger
 {
     /**
-     * @var int The minimum log level threshold.
+     * @var int Minimum log level threshold.
      */
     private int $threshold;
 
     /**
-     * Constructs a new Logger instance with the specified log level threshold.
-     *
-     * @param int $threshold The minimum log level to record (default: 0 - log everything).
+     * @var string File path for storing log entries.
      */
-    public function __construct(int $threshold = 0)
+    private string $logFilePath;
+
+    /**
+     * @var int|null Maximum file size for log rotation (bytes).
+     */
+    private int $maxFileSize;
+
+    /**
+     * @var bool Asynchronous logging flag.
+     */
+    private bool $async;
+
+    /**
+     * Constructor.
+     *
+     * @param int    $threshold   Minimum log level to record.
+     * @param string $logFilePath Path to the log file.
+     * @param int    $maxFileSize Max file size in bytes before rotation.
+     * @param bool   $async       Whether to enable asynchronous logging.
+     */
+    public function __construct(int $threshold = 0, string $logFilePath = '/tmp/app.log', int $maxFileSize = 10485760, bool $async = false)
     {
         $this->threshold = $threshold;
+        $this->logFilePath = $logFilePath;
+        $this->maxFileSize = $maxFileSize;
+        $this->async = $async;
     }
 
     /**
@@ -53,7 +75,7 @@ class Logger extends AbstractLogger
      *
      * @return void
      */
-    public function log($level, string $message, array $context = []): void
+    public function log($level, Stringable|string $message, array $context = []): void
     {
         $numericLevel = $this->convertLogLevel($level);
 
@@ -62,14 +84,12 @@ class Logger extends AbstractLogger
         }
 
         $logEntry = [
-            'code'      => $numericLevel,
-            'level'     => $this->getLogLabel($numericLevel),
             'timestamp' => date('Y-m-d H:i:s'),
+            'level'     => $this->getLogLabel($numericLevel),
             'message'   => $this->interpolateMessage($message, $context),
             'context'   => $context,
         ];
 
-        // Call storage logic here (e.g., write to a file or send to an external service)
         $this->writeLog($logEntry);
     }
 
@@ -79,7 +99,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function emergency(string $message, array $context = []): void
+    public function emergency(Stringable|string $message, array $context = []): void
     {
         $this->log('emergency', $message, $context);
     }
@@ -90,7 +110,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function alert(string $message, array $context = []): void
+    public function alert(Stringable|string $message, array $context = []): void
     {
         $this->log('alert', $message, $context);
     }
@@ -101,7 +121,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function critical(string $message, array $context = []): void
+    public function critical(Stringable|string $message, array $context = []): void
     {
         $this->log('critical', $message, $context);
     }
@@ -112,7 +132,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function error(string $message, array $context = []): void
+    public function error(Stringable|string $message, array $context = []): void
     {
         $this->log('error', $message, $context);
     }
@@ -123,7 +143,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function warning(string $message, array $context = []): void
+    public function warning(Stringable|string $message, array $context = []): void
     {
         $this->log('warning', $message, $context);
     }
@@ -134,7 +154,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function notice(string $message, array $context = []): void
+    public function notice(Stringable|string $message, array $context = []): void
     {
         $this->log('notice', $message, $context);
     }
@@ -145,10 +165,11 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function info(string $message, array $context = []): void
+    public function info(Stringable|string $message, array $context = []): void
     {
         $this->log('info', $message, $context);
     }
+    
 
     /**
      * Shortcut method for logging a DEBUG-level message.
@@ -156,7 +177,7 @@ class Logger extends AbstractLogger
      * @param string $message
      * @param array  $context
      */
-    public function debug(string $message, array $context = []): void
+    public function debug(Stringable|string $message, array $context = []): void
     {
         $this->log('debug', $message, $context);
     }
@@ -174,11 +195,11 @@ class Logger extends AbstractLogger
     }
 
     /**
-     * Converts a log level (either string or int) into its numeric representation.
+     * Converts a log level (string or int) to its numeric representation.
      *
      * @param mixed $level The log level.
      *
-     * @return int The numeric log level.
+     * @return int Numeric log level.
      */
     private function convertLogLevel($level): int
     {
@@ -194,18 +215,18 @@ class Logger extends AbstractLogger
         ];
 
         if (is_int($level)) {
-            return min(max($level, 100), 600); // Ensure level is within bounds
+            return min(max($level, 100), 600);
         }
 
-        return $logLevels[strtolower($level)] ?? 0;
+        return $logLevels[strtolower((string) $level)] ?? 0;
     }
 
     /**
-     * Retrieves the string label for a given numeric log level.
+     * Gets the label for a numeric log level.
      *
-     * @param int $level The numeric log level.
+     * @param int $level Numeric log level.
      *
-     * @return string The log level label.
+     * @return string Log level label.
      */
     private function getLogLabel(int $level): string
     {
@@ -228,20 +249,20 @@ class Logger extends AbstractLogger
      * @param string $message The log message with placeholders.
      * @param array  $context The context data to replace placeholders.
      *
-     * @return string The interpolated log message.
+     * @return string Interpolated log message.
      */
-    private function interpolateMessage(string $message, array $context): string
+    private function interpolateMessage(Stringable|string $message, array $context): string
     {
         $replace = [];
         foreach ($context as $key => $value) {
-            $replace['{' . $key . '}'] = $value;
+            $replace['{' . $key . '}'] = is_scalar($value) ? $value : json_encode($value);
         }
 
-        return strtr($message, $replace);
+        return strtr((string)$message, $replace);
     }
 
     /**
-     * Writes the log entry to a storage medium.
+     * Writes the log entry to a storage medium with a customizable format.
      *
      * @param array $logEntry The log entry data.
      *
@@ -249,8 +270,71 @@ class Logger extends AbstractLogger
      */
     private function writeLog(array $logEntry): void
     {
-        // Placeholder: Extend this for file storage, database, etc.
-        // Example:
-        // file_put_contents('/path/to/logfile.log', json_encode($logEntry) . PHP_EOL, FILE_APPEND);
+        $formattedLog = json_encode($logEntry) . PHP_EOL;
+    
+        // Rotate the log file if necessary
+        $this->rotateLogFile();
+    
+        if ($this->async) {
+            $this->writeAsync($formattedLog);
+        } else {
+            file_put_contents($this->logFilePath, $formattedLog, FILE_APPEND | LOCK_EX);
+        }
+    }
+    
+
+    /**
+     * Formats the log entry based on the given pattern.
+     *
+     * @param array  $logEntry The log entry data.
+     * @param string $pattern  The log pattern (e.g., "[{timestamp}] {level}: {message}").
+     *
+     * @return string The formatted log entry.
+     */
+    private function formatLog(array $logEntry, string $pattern): string
+    {
+        $placeholders = [
+            '{timestamp}' => $logEntry['timestamp'] ?? '',
+            '{level}'     => $logEntry['level'] ?? 'UNKNOWN',
+            '{message}'   => $logEntry['message'] ?? '',
+            '{context}'   => empty($logEntry['context']) ? '{}' : json_encode($logEntry['context']),
+        ];
+    
+        return strtr($pattern, $placeholders);
+    }
+
+    /**
+     * Rotates the log file if it exceeds the maximum size.
+     *
+     * @return void
+     */
+    private function rotateLogFile(): void
+    {
+        if (file_exists($this->logFilePath) && filesize($this->logFilePath) >= $this->maxFileSize) {
+            $backupPath = $this->logFilePath . '.' . time();
+            rename($this->logFilePath, $backupPath);
+        }
+    }
+
+    /**
+     * Writes log asynchronously.
+     *
+     * @param string $logLine The log line to write.
+     *
+     * @return void
+     */
+    private function writeAsync(string $logLine): void
+    {
+        $process = proc_open(
+            'php',
+            [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']],
+            $pipes
+        );
+
+        if (is_resource($process)) {
+            fwrite($pipes[0], '<?php file_put_contents("' . addslashes($this->logFilePath) . '", ' . var_export($logLine, true) . ', FILE_APPEND);');
+            fclose($pipes[0]);
+            proc_close($process);
+        }
     }
 }
