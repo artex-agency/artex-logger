@@ -17,6 +17,20 @@
 
 &nbsp;
 
+<p align="center">
+    <a href="https://packagist.org/packages/artex/logger">
+        <img src="https://img.shields.io/packagist/v/artex/logger" alt="Latest Version">
+    </a>
+    <a href="https://packagist.org/packages/artex/logger">
+        <img src="https://img.shields.io/packagist/dt/artex/logger" alt="Total Downloads">
+    </a>
+    <a href="LICENSE">
+        <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
+    </a>
+</p>
+
+&nbsp;
+
 ## Key Features
 - **Lightweight & High-Performance**: Minimal overhead, designed for speed.
 - **PSR-3 Compliant**: Fully compatible with existing logging frameworks.
